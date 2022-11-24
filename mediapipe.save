@@ -1,1 +1,0 @@
-mediapipe-silicon>=0.8.9; platform_system == "Darwin" and platform.mach
