@@ -8,8 +8,6 @@ import pusher
 app = Flask(__name__)
 
 def gen_frames():
-    global pusher_client
-
     cap = cv2.VideoCapture(0)
     if (cap is None or not cap.isOpened()):
         raise Exception("Warning: unable to open video source {}".format(cap))
