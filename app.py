@@ -41,7 +41,7 @@ def gen_frames():
 
 @app.route('/', methods=['GET'])
 def index():
-    global sid, pkey
+    global sid, pkey, pusher
     sid = request.args.get('sid', '')
     pkey = request.args.get('pkey', '')
     env = dotenv_values(".env")
