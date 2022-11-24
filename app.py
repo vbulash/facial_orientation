@@ -41,7 +41,8 @@ def gen_frames():
 
 @app.route('/', methods=['GET'])
 def index():
-    global sid, pkey, pusher
+    global sid, pkey, env, pusher_client
+    
     sid = request.args.get('sid', '')
     pkey = request.args.get('pkey', '')
     env = dotenv_values(".env")
@@ -59,3 +60,6 @@ def index():
 def cv2_feed():
     return Response(
         gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# if (__name__ == "__main__"):
+#    app.run(host = '0.0.0.0', port = 5200)
