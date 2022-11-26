@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, render_template, Response, request
 import cv2
 from facial_orientation import FacialOrientation
@@ -10,7 +11,7 @@ app = Flask(__name__)
 def gen_frames():
     cap = cv2.VideoCapture(0)
     if (cap is None or not cap.isOpened()):
-        raise Exception("Warning: unable to open video source {}".format(cap))
+        raise Exception("Невозможно открыть источник видео {}".format(cap))
     Face = FacialOrientation(cap=cap, angle_deviation=10,
                              show_fps=False, show_coords=False, blur_background=True)
 
@@ -39,8 +40,8 @@ def gen_frames():
 
 @app.route('/', methods=['GET'])
 def index():
-    global sid, pkey, env, pusher_client
-    
+    global sid, pkey, env, pusher_client, exiting
+
     sid = request.args.get('sid', '')
     pkey = request.args.get('pkey', '')
     env = dotenv_values(".env")
@@ -50,7 +51,8 @@ def index():
         secret=env.get('PUSHER_APP_SECRET'),
         cluster=env.get('PUSHER_APP_CLUSTER')
     )
-    
+    exiting = False
+
     return render_template('index.html')
 
 
@@ -59,5 +61,21 @@ def cv2_feed():
     return Response(
         gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-# if (__name__ == "__main__"):
-#    app.run(host = '0.0.0.0', port = 5200)
+
+# Компактный способ выхода без устаревшего werkzeug - https://stackoverflow.com/questions/15562446/how-to-stop-flask-application-without-using-ctrl-c
+@app.route("/exit", methods=['GET'])
+def exit_app():
+    global exiting
+    exiting = True
+    return "Done"
+
+
+@app.teardown_request
+def teardown(exception):
+    global exiting
+    if exiting:
+        os._exit(0)
+
+
+if __name__ == "__main__":
+    app.run()
