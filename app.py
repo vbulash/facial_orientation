@@ -5,10 +5,13 @@ from facial_orientation import FacialOrientation
 from dotenv import dotenv_values
 import requests
 import pusher
+import json
 
 app = Flask(__name__)
 
 def gen_frames():
+    global sid, env
+    
     cap = cv2.VideoCapture(0)
     if (cap is None or not cap.isOpened()):
         raise Exception("Невозможно открыть источник видео {}".format(cap))
@@ -25,17 +28,24 @@ def gen_frames():
                    b'Content-Type: image/png\r\n\r\n' + frame + b'\r\n')
 
             if (len(message) > 0):
-                print(message)
-                # TODO сделать сообщение pusher - изменение message (массив)
-                # pusher_client.trigger(
-                #     u'my-channel', u'my-event', {u'message': u'hello world'})
+                pusher_client.trigger(
+                    'face-channel-' + sid, 'face-event', {'message': message[0]})
+            else:
+                pusher_client.trigger(
+                    'face-channel-' + sid, 'face-event', {'message': ''})
 
     cap.release()
     if (is_save):
-        pass
-        # TODO сделать сообщение pusher - создано photo (buffer = base64)
+        # print(buffer)
+        image = buffer.decode('ascii')
+        # TODO pusher не может принимать файлы больше 10K - необходимо передавать буфер через request
         # pusher_client.trigger(
-        #     u'my-channel', u'my-event', {u'message': u'hello world'})
+        #     'face-save-channel-' + sid, 'face-save-event', image)
+        r = requests.post(env.get('SHOT_DONE_URL'), {'uuid': sid, 'photo': image})
+        print(r)
+        pusher_client.trigger(
+            'face-save-channel-' + sid, 'face-save-event', True)
+        
 
 
 @app.route('/', methods=['GET'])
