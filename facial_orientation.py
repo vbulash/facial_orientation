@@ -9,7 +9,7 @@ RED = (77, 32, 238)
 GREEN = (120, 214, 0)
 
 class FacialOrientation:
-    def __init__(self, cap, angle_deviation = 10, show_fps=False, show_coords=False, blur_background=False):
+    def __init__(self, cap, angle_deviation = 10, show_fps=False, show_coords=False, blur_background=False, crop=None):
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.mp_drawing = mp.solutions.drawing_utils
@@ -18,9 +18,9 @@ class FacialOrientation:
         self.counter_illumination = 0
         self.font = cv2.FONT_HERSHEY_COMPLEX
         self.is_save = False
-        self.png = ''
         self.cap = cap
         self.show_fps = show_fps
+        self.crop = crop
         self.show_coords = show_coords
         self.blur_background = blur_background
         _, image = self.cap.read()
@@ -184,13 +184,16 @@ class FacialOrientation:
             if(self.start_correct > 70 and not self.is_save):
                 retval, buffer = cv2.imencode(".png", image_original[self.face_frame_circle.cy - self.face_frame_circle.r : self.face_frame_circle.cy + self.face_frame_circle.r,
                                                         self.face_frame_circle.cx - self.face_frame_circle.r : self.face_frame_circle.cx + self.face_frame_circle.r])
-                self.png = base64.b64encode(buffer)
+                png_as_text = base64.b64encode(buffer)
+                #print(png_as_text)
                 self.is_save = True
                 self.start_correct = 0
-                return (self.png, self.is_save, message)
         else:
             self.start_correct = 0
-
+        if self.crop is not None:
+            image = image[self.face_frame_circle.cy - self.face_frame_circle.r : self.face_frame_circle.cy + self.face_frame_circle.r,
+            self.face_frame_circle.cx - self.face_frame_circle.r : self.face_frame_circle.cx + self.face_frame_circle.r]
+            image = cv2.resize(image, dsize=(int(self.crop), int(self.crop)))
         return (image, self.is_save, message)
                      
     def get_orientation(self, x, y) -> str:
